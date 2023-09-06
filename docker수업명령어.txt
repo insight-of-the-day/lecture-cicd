@@ -1,0 +1,2 @@
+dckr_pat_yX0-by4S92Fj6tQCc5o16VLTJeE :token
+docker login -u hehekiki
