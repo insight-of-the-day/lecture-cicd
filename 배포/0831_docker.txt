@@ -1,0 +1,71 @@
+컨테이너 생성
+docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=1234 -d mysql:latest
+
+컨테이너 리스트
+docker ps -a  
+
+컨테이너 안으로 들어가기
+docker exec -it mysql bash      : 종료하고 나올때는 exit
+
+mysql 실행
+# mysql -u root -p
+ 
+sql> create database shop;
+show databases;
+show tables;
+use shop;		--데이터베이스 선택
+create table emp ( username varchar(20), password varchar(20) );
+insert into emp values ('scott','1111');
+select * from emp;
+
+sql>exit
+#exit
+
+
+컨테이너 중지
+docker stop mysql
+
+컨테이너 삭제
+docker rm mysql
+
+
+이미지 리스트
+docker images
+
+이미지 삭제
+docker rmi 이미지id
+
+-------------------------------------------------------------------
+
+메이븐 빌드
+mvn install -DskipTests=true    ==> target/war파일 생성
+
+도커 이미지 생성
+docker build -t cyanthin/myapp .     <= Dockerfile 확인
+docker images
+
+컨테이너 생성
+docker run --name app -p 80:8080 -e jasypt.encryptor.password=!good_D@ay -d cyanthin/myapp
+
+컨테이너 로그 
+docker logs -f app
+
+도커허브에 이미지 올리기
+docker push cyanthin/myapp
+       pull
+
+로컬에 있는 이미지를 삭제하고 pull -> run
+docker stop app
+docker rm app
+docker rmi cyanthin/myapp
+docker images
+docker ps -a
+
+
+
+
+
+
+
+
+

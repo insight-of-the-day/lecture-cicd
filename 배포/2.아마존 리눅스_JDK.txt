@@ -1,0 +1,124 @@
+
+■ 서버 연결하고 jar파일 업로드(윈도우에서 실행)
+1. ssh 명령으로 서버연결
+c:\> ssh -i "ci_server.pem" ec2-user@ec2-54-180-90-17.ap-northeast-2.compute.amazonaws.com
+
+2. scp 명령으로 ec2서버에 jar 파일 업로드
+$ scp -i "ci_server.pem"  pettopia.jar  ec2-user@ec2-52-79-47-253.ap-northeast-2.compute.amazonaws.com:~
+
+
+
+■ 타임존 변경 (ec2에서 실행)
+$ sudo rm /etc/localtime
+$ sudo ln -s /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+$ date
+
+
+■ JDK 설치 
+1. 자바 설치 가능 리스트 검색
+$ sudo yum list java*
+
+2. jdk 설치(Amazon Corretto 란 무료로 사용할 수 있는 OpenJDK의 프로덕션용 멀티플랫폼 배포판입니다.
+$ sudo yum install -y java-11-amazon-corretto.x86_64
+$ java -version
+
+$ echo $JAVA_HOME
+
+4. 자바 설치 경로 확인
+$ whhich java
+$ readlink -f /usr/bin/java                                <== 
+
+5. 환경변수 설정
+$ sudo vi /etc/profile
+   맨 마지막으로 이동(Shift+g) 후 i를 눌러 insert모드로 변환한 뒤, 환경변수 설정값 입력
+export JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto.x86_64
+export PATH=$PATH:$JAVA_HOME/bin
+   export CLASSPATH=$JAVA_HOME/jre/lib:$JAVA_HOME/lib/tools.jar   <== 확인
+
+$ sudo source /etc/profile
+
+■ 업로드 폴더 생성
+$ mkdir upload
+$ sudo chmod 777 upload
+
+
+
+■ jar 실행
+$ sudo java -jar -Djasyptkey=pet  pettopia.jar --spring.profiles.active=linux 
+ java -jar  buildtest.jar --spring.profiles.active=linux 
+
+■ 스크립트 작성
+$ vi start_server.sh
+------------------------------------------------------------------------------------
+echo "Start Spring Boot Application!"
+CURRENT_PID=$(ps -ef | grep java | grep pettopia | awk '{print $2}')
+echo "$CURRENT_PID"
+
+ if [ -z $CURRENT_PID ]; then
+echo ">Since there is no currently running application, it will not exit.."
+
+else
+echo "> kill -9 $CURRENT_PID"
+sudo kill -9 $CURRENT_PID
+sleep 10
+fi
+ echo ">Application distribution progress!"
+sudo java -jar  -Djasyptkey=pet  /home/ec2-user/deploy/pettopia-0.0.1-SNAPSHOT.jar 
+    --spring.profiles.active=linux >> /home/ec2-user/logs/tomcat.log 2>&1 &
+    -v 
+echo ">end sh"
+-------------------------------------------------------------------------------------
+
+■ 실시간 로그보기
+$ tail -f logs/tomcat.log
+
+
+
+
+
+----------------------------------------------------------
+ERROR org.springframework.boot.SpringApplication - Application run failed
+org.springframework.boot.context.config.InvalidConfigDataPropertyException: Property 'spring.profiles.active' imported from location 'class path resource [application-dev.yml]' is invalid in a profile specific resource [origin: class path resource [application-dev.yml] from skyshop-mail-1.0.jar - 42:17]
+----------------------------------------------------------
+sudo java -jar  -Djasyptkey=pet  /home/ec2-user/deploy/pettopia-0.0.1-SNAPSHOT.jar --spring.config.activate.on-profile=linux  >> /home/ec2-user/logs/tomcat.log 2>&1 &
+
+
+
+참고사이트
+----------------------------------------------------------
+https://velog.io/@sa1341/Jenkins에서-EC2로-배포하기
+
+
+원격 shell 실행 시 job이 끝나지 않는 현상
+----------------------------------------------------------
+jenkins 에서 nohup으로 background 프로세스 수행시, 위와 같이 job이 끝나지 않는 경우가 있다.
+SSH를 통해 스크립트를 수행시, 표준 출력이 닫히거나 timeout이 발생할 때 까지 스크립트가 계속해서 열려있게 된다.
+그래서 script로 백그라운드 작업 수행시에는, 아래와 같이 모든 output을 redirect 해줘야 스크립트가 바로 종료가 된다.
+( 백그라운드 작업을 실행하는 코드가 포함된 script 를 jenkins에서 보내거나, 로컬 머신에 해당 script가 있거나 마찬가지 )
+
+nohup ./program > /dev/null 2>&1 &
+
+2>&1 는 표준에러를 표준출력으로 redirection 하라는 의미이다.
+보통 프로그램에서 에러가 발생하면, 화면에 에러메세지를 표시해서 사용자에게 경고를 주게 된다. 이러한 기본적인 에러 동작에 대해 사용자가 임의로 재지정하여, 오류가 발생해도 경고메세지 출력을 내 마음대로 조정 할 수 있는데 이것을 표준 에러 리다이렉션이라고 한다.
+다시 돌아가서 2>&1 이라함은 에러가 발생하면 프로그램이 작동을 멈추거나 꺼지지않게 하고, 대신 에러내용을 표준 출력 동작으로 행동하게 하여 프로그램은 오류가 있더라도 화면에 경고메세지를 출력하지 말고 파일이나 딴 곳으로 처리하고, 어쨋든 계속 실행하라는 의미로 볼 수 있다.
+
+0 : 표준입력
+1 : 표준출력
+2 : 표준에러
+
+
+-------------------------------------
+
+docker run -d -p 8080:8080 -e [환경 변수]=[값] [docker image]:[tag] 
+
+---------------------------------------------------------------------
+
+$ export jasyptkey=pet
+$ echo $jasyptkey
+
+-------------------------------------
+$  sudo vi /etc/profile
+    shift + g(맨마지막으로 이동) -> o(아래행삽입)
+    export jasyptkey=pet 
+    ESC  -> :wq  
+$ source /etc/profile

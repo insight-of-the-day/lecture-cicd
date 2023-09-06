@@ -1,0 +1,112 @@
+아마존 리눅스에 오라클 설치  (AMI : Amazon Linux 2 Kernel 5.10)
+==============================
+
+## 참고사이트
+https://davidghedini.com/pg/entry/install_oracle_11g_xe_on_centos/
+https://velog.io/@yk1700/오라클-db서버를-만들기-위해-swap-용량을-확장해-보자
+https://jongwan.com/centos-7-오라클-18c-xe-설치/
+
+## ec2 서버 접속
+ssh -i "dbserver.pem" ec2-user@43.201.109.234
+or 
+putty
+
+## root 로그인 시도
+sudo -i
+
+
+##swap 메모리 생성
+mkdir /swap && cd $_
+touch /swap/swapfile
+dd if=/dev/zero of=/swap/swapfile bs=1M count=2048
+
+chmod 0600 /swap/swapfile
+mkswap /swap/swapfile
+swapon /swap/swapfile
+swapon -s
+free -mt
+
+##영구적으로 스왑을 등록
+vi /etc/fstab   
+shift+G  ->  o  -> 밑에줄 내용 추가 -> esc -> :wq
+  /swap/swapfile swap swap defaults 0 0
+
+
+## 라이브러리 설치
+yum install libaio bc flex libnsl
+
+##파일다운로드
+cd /usr/local/src
+wget https://dw.hanbit.co.kr/Oracle/11gXE/oracle-xe-11.2.0-1.0.x86_64.rpm.zip
+
+## 설치
+unzip -q oracle-xe-11.2.0-1.0.x86_64.rpm.zip
+cd Disk1
+rpm -ivh oracle-xe-11.2.0-1.0.x86_64.rpm 
+
+/etc/init.d/oracle-xe configure
+   주의 : 8080, 1521, 패스워드 2번
+
+export
+
+cd /u01/app/oracle/product/11.2.0/xe/bin
+
+source ./oracle_env.sh
+
+## 사용자 계정 생성
+sqlplus  system
+패스워드
+CREATE USER quiz IDENTIFIED BY quiz;
+
+
+
+추가사항
+----------------------------------------------
+## start/stop
+/etc/init.d/oracle-xe start
+/etc/init.d/oracle-xe stop
+
+## root 비밀번호 설정
+sudo passwd root
+su - 
+
+
+## 파일전송
+scp -i "dbserver.pem" oracle-xe-11.2.0-1.0.x86_64.rpm.zip  ec2-user@3.36.234.186:~
+
+
+## path 환경변수
+export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe
+export TNS_ADMIN=$ORACLE_HOME/network/admin
+export ORACLE_SID=XE
+export ORAENV_ASK=NO
+export PATH=$PATH:$ORACLE_HOME/bin
+
+echo ORACLE_HOME
+
+
+
+
+
+
+## 방화벽
+firewall-cmd --permanent --add-port=1521/tcp
+firewall-cmd --reload
+
+
+## 스키마 생성
+sqlplus /nolog
+
+conn sys/패스워드 as sysdba
+
+
+CREATE USER quiz IDENTIFIED BY quiz;
+
+GRANT CONNECT, RESOURCE, CREATE JOB, CREATE VIEW, CREATE ANY CONTEXT TO quiz;
+
+ALTER USER quiz QUOTA UNLIMITED ON USERS;
+
+
+alter user hr identified by hr account unlock;
+
+select file_name, tablespace_name from dba_data_files;

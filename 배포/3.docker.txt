@@ -1,0 +1,187 @@
+https://github.com/cyannara/myapp
+
+mvn install -DskipTests
+
+/////도커 이미지 생성
+docker build -t cyanthin/myapp .
+docker images
+
+/////도커 컨테이너 실행, 로그확인, 컨테이너안으로 들어가기
+docker run -d -p 85:8080 --name myapp cyanthin/myapp
+docker ps -a
+docker logs myapp
+docker exec -it myapp bash
+
+/////도커허브에 로그인하고 이미지 올리기
+docker token: dckr_pat_41agVezS_VpiWWcs9f9AzFlgy8s
+docker login -u cyanthin -p dckr_pat_41agVezS_VpiWWcs9f9AzFlgy8s
+docker push cyanthin/myapp
+
+/////컨테이너 중지하고 이미지 삭제
+docker stop myapp
+docker rm myapp
+docker rmi --force cyanthin/myapp
+
+////이미지 다운받고 컨테이너 실행
+sudo docker pull cyanthin/myapp
+sudo docker run -d -p 85:8080 --name myapp cyanthin/myapp
+브라우저 테스트 : http://localhost:85
+브라우저 테스트 : http://ec2퍼블릭IP:85
+
+/////도커 실행 권한 부여 ununtu에게 
+sudo usermod -aG docker ubuntu
+sudo service docker restart
+putty 재접속
+
+//// jenkins 도커 설치
+docker run -d -p 900:8080 --name jenkins jenkins/jenkins:lts
+
+
+
+npm run serve
+npm run build
+
+
+빌드 준비
+----------------------------------------------
+1. servlet-conext.xml에서 ${} 인식이 안됨
+----------------------------------------------
+해결책: PropertyPlaceholderConfigurer 빈 등록으로 변경
+
+<context:property-placeholder location="classpath:config/db.properties"/>
+
+
+<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="locations">
+        <list>
+            <value>classpath:config/db.properties</value>
+        </list>
+    </property>
+</bean>
+
+
+----------------------------------------------
+2. mapper.xml 배포 
+원인 : java 밑에 있는 xml 파일은 배포안함.(원래위치는 resources임)
+해결책 : pom.xml에 xml포함
+----------------------------------------------
+	  <build>
+          	<resources>
+          		<resource>
+			   <directory>src/main/resources</directory>
+          		</resource>
+          		<resource>          						                                  <directory>src/main/java</directory>
+          			<includes>
+          				<include>**/*.xml</include>
+          			</includes>
+          		</resource>
+          	</resources>
+			<plugin> 
+				<groupId>org.codehaus.mojo</groupId> <!-- 명령어를 실행 시키도록 해주는 plugin -->
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<!-- npm install -->
+					<execution>
+						<id>front-end install</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<phase>prepare-package</phase>
+						<configuration>
+							<executable>npm</executable>
+							<arguments>
+								<argument>install</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<!-- npm run build -->
+					<execution>
+						<id>front-end build package</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<phase>prepare-package</phase>
+						<configuration>
+							<executable>npm</executable>
+							<arguments>
+								<argument>run</argument>
+								<argument>build</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+				<configuration>
+					<workingDirectory>${basedir}/front</workingDirectory>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<!-- disc 폴더 에서 html 파일을 /src/main/resources/templates 로 이동 -->
+					<execution>
+						<id>copy front-end template</id>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<phase>prepare-package</phase>
+						<configuration>
+							<outputDirectory>${basedir}/src/main/webapp</outputDirectory>
+							<resources>
+								<resource>
+									<directory>front/dist</directory>
+									<includes>
+										<include>index.html</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+					
+					<!-- disc 폴더 에서 html 파일을 제외하고 /src/main/resources/static 폴더로 이동 -->
+					<execution>
+						<id>copy front-end static assets</id>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<phase>prepare-package</phase>
+						<configuration>
+							<outputDirectory>${basedir}/src/main/webapp</outputDirectory>
+							<resources>
+								<resource>
+									<directory>front/dist</directory>
+									<excludes>
+										<exclude>index.html</exclude>
+									</excludes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+          </build>
+
+
+----------------------------------------------
+3. .gitignore 수정
+   front 관련 파일은 빌드하면 생성되므로 제외함
+----------------------------------------------
+/src/main/webapp/css/
+/src/main/webapp/js/
+/src/main/webapp/index.html
+/src/main/webapp/favicon.ico
+
+
+----------------------------------------------
+4. webapp/WEB-INF/spring/appServlet/servlet-context.xml
+   정적컨텐츠 리소스 추가
+----------------------------------------------
+	<resources mapping="/css/**" location="/css/" />
+	<resources mapping="/js/**" location="/js/" />
+	<resources mapping="/index.html" location="/index.html" />
+	<resources mapping="/favicon.ico" location="/favicon.ico" />
+
+
+
+

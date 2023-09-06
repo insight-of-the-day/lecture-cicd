@@ -1,0 +1,15 @@
+1. jdk 설치
+	JAVA_HOME
+2. tomcat 설치
+3. 설정
+1. 포트변경 : server.xml
+	80
+2. tomcat 계정 추가 : tomcat-user.xml
+
+<role rolename="manager-gui"/>
+<role rolename="manager-script"/>
+<role rolename="manager-status"/>
+<user username="tomcat" password="tomcat" roles="manager-gui,manager-script,manager-status"/>
+
+
+3. war 파일 C:\Dev\apache-tomcat-9.0.75\webapps 복사

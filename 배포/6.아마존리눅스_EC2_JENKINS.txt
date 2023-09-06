@@ -1,0 +1,72 @@
+
+
+
+참고사이트
+https://get.jenkins.io/redhat-stable/
+https://green-joo.tistory.com/12
+   https://velog.io/@hmyanghm/AWS-EC2에-Jenkins-서버-구축
+
+
+EC2 서버 접속
+ssh -i "dbserver.pem" ec2-user@43.201.109.234
+
+
+■ 자바 설치
+1. 자바 설치 가능 리스트 검색
+  $ sudo yum -y update
+  $ sudo yum list java*
+
+2. Amazon Corretto 란 무료로 사용할 수 있는 OpenJDK의 프로덕션용 멀티플랫폼 배포판입니다.
+  $ sudo yum install -y java-11-amazon-corretto.x86_64
+
+3. 자바 설치 확인
+  $ java -version
+
+
+■ Jenkins 설치 (버전:  Jenkins 2.401.3)
+
+1. jenkins 리포지토리 추가
+  $ sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+2. Jenkins GPG Key 추가
+Jenkins를 설치할 때 신뢰할 수 있는 소스로부터 제공되는 파일이라는 것을 증명하기 위해 로컬 GPG 키링에 Jenkins GPG Key를 추가해줘야 한다.
+
+  $ sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+3. Jenkins 설치
+  $ sudo yum install jenkins
+
+4. Jenkins 서버 시작
+  $ sudo systemctl start jenkins    또는   $ sudo service jenkins start
+  $ sudo systemctl enable jenkins
+  $ sudo systemctl status jenkins
+
+5. 8080 포트 LISTEN 여부 확인
+  $ netstat -na | grep 8080
+
+
+
+■ 메모리 상태 확인
+$free -h
+
+// swap 파일을 생성해준다. (메모리 상태 확인 시 swap이 있었지만 디렉토리 파일은 만들어줘야한다.)
+$ sudo mkdir /var/spool/swap
+$ sudo touch /var/spool/swap/swapfile
+$ sudo dd if=/dev/zero of=/var/spool/swap/swapfile count=2048000 bs=1024
+
+// swap 파일을 설정한다.
+$ sudo chmod 600 /var/spool/swap/swapfile
+$ sudo mkswap /var/spool/swap/swapfile
+$ sudo swapon /var/spool/swap/swapfile
+
+// swap 파일을 등록한다.
+$ sudo vim /etc/fstab
+파일이 열리면 해당 파일 아래쪽에 하단 내용 입력 후 저장
+- 입력 할 수 있도록 하는 명령어 -> i
+- 파일 수정 후 저장하는 명령어-> esc키 누른 후 :wq 입력 후 엔터
+/var/spool/swap/swapfile    none    swap    defaults    0 0
+
+// 메모리 상태 확인
+$free -h
+
+✅ 1️⃣

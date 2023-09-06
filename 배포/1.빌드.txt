@@ -1,0 +1,61 @@
+■ properties 변경
+
+1. 업로드 폴더 변경
+@Configuration
+public class MvcConfiguration implements WebMvcConfigurer {
+
+    @Override
+    public void addResourceHandlers(final ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/upload/**")
+                .addResourceLocations("file:c://upload");
+    }
+}
+
+
+■ gradle 빌드
+----------------------------------------------
+
+bootRun {
+    String activeProfile = System.properties['spring.profiles.active']
+    systemProperty "spring.profiles.active", activeProfile
+}
+
+
+
+■ 메이븐 빌드
+----------------------------------------------
+
+1. test 스킵 설정
+skiptest pom.xml에서 <build>안에 skipTests를 true로 설정하거나 
+mvn 실행할 때 -DskipTests 옵션을 지정
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.19.1</version>
+        <configuration>
+          <skipTests>true</skipTests>
+        </configuration>
+      </plugin>
+
+2. spring 프로젝트에서 mapper.xml이 src/main/java 밑에 있는 경우 
+매퍼파일도 배포파일에 포함되도록 빌드 옵션 추가
+
+<build>
+	<resources>
+		<resource>
+			<directory>src/main/resources</directory>
+		</resource>
+		<resource>
+			<directory>src/main/java</directory>
+			<includes>
+				<include>**/*.xml</include>
+			</includes>
+		</resource>
+	</resources>
+</build>
+
+3. 빌드해서 jar 파일 생성
+이클립스 > run as > maven install                     <== 이클립스에서 실행
+프로젝트 경로:> mvn clean install -DskipTests          <== cmd 창에서 실행
+
